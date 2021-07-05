@@ -4,5 +4,5 @@ Dockerfile
 .git
 .git/**
 vendor
-redis-take-home*
+worker-pattern*
 redis-data

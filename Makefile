@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash -o errexit -o pipefail -o nounset
 
-NAME     := redis-take-home
+NAME     := worker-pattern
 VERSION  := v0.0.1
 DATE     := $(shell date -u)
 CGO_FLAG := GCO_ENABLED=0
