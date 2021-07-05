@@ -14,6 +14,7 @@ import (
 
 	client "github.com/burdzwastaken/worker-pattern/clients"
 	"github.com/go-redis/redis/v8"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -148,20 +149,17 @@ func doWork(ctx context.Context, client *client.Client, workerID int, wg *sync.W
 			}
 		}
 
-		duration, err := strconv.Atoi(keyName["duration"])
+		duration, err := sleep(client.Context, keyID, keyName, workerID)
 		if err != nil {
 			log.Printf("Error when running: %s", err.Error())
-			continue
 		}
-		durationMS := (time.Duration(duration) * time.Millisecond)
-		log.Printf("Worker %d performing sleep for %dms\n", workerID, durationMS.Milliseconds())
-		time.Sleep(durationMS)
-		sleptFor = sleptFor + durationMS
 
 		err = client.Publish(completedQueue, keyID, workerID)
 		if err != nil {
 			log.Printf("Error when running: %s", err.Error())
 		}
+
+		sleptFor = sleptFor + duration
 	}
 
 	err := client.Publish(completedWorkersQueue, "", workerID)
@@ -170,6 +168,19 @@ func doWork(ctx context.Context, client *client.Client, workerID int, wg *sync.W
 	}
 
 	log.Printf("Worker %d slept for a total of %v seconds", workerID, sleptFor.Seconds())
+}
+
+// Sleeps for a specific time as set in Redis
+func sleep(ctx context.Context, keyID string, keyName map[string]string, workerID int) (time.Duration, error) {
+	duration, err := strconv.Atoi(keyName["duration"])
+	if err != nil {
+		return 0, errors.Wrapf(err, "Error while converting %v to an integer", keyName["duration"])
+	}
+	durationMS := (time.Duration(duration) * time.Millisecond)
+	log.Printf("Worker %d performing sleep for %dms\n", workerID, durationMS.Milliseconds())
+	time.Sleep(durationMS)
+
+	return durationMS, nil
 }
 
 // Workers will publish their status back to the completedWorkersChannel
