@@ -1,0 +1,8 @@
+.gocache
+.vscode
+Dockerfile
+.git
+.git/**
+vendor
+redis-take-home*
+redis-data
