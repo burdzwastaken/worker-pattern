@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/go-redis/redismock/v8"
 )
@@ -163,7 +164,7 @@ func TestLeftPopSuccess(t *testing.T) {
 	}
 }
 
-func TestHashGetAll(t *testing.T) {
+func TestHashGetAllSuccess(t *testing.T) {
 	var (
 		ctx   = context.TODO()
 		key   = "test"
@@ -182,6 +183,39 @@ func TestHashGetAll(t *testing.T) {
 	}
 
 	_, err := client.HashGetAll(key)
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestExpireKeySuccess(t *testing.T) {
+	var (
+		ctx    = context.TODO()
+		key    = "test"
+		fields = map[string]interface{}{
+			"test": "test",
+		}
+	)
+
+	var expireInSeconds time.Duration
+	expireInSeconds = 100
+	duration := (time.Duration(expireInSeconds) * time.Second)
+
+	redis, mock := redismock.NewClientMock()
+	mock.MatchExpectationsInOrder(true)
+	mock.Regexp().ExpectHSet(key, fields, `^[a-z]+$`).SetVal(1)
+	mock.ExpectExpire(key, duration).SetVal(true)
+
+	client := Client{
+		Redis:   redis,
+		Context: ctx,
+	}
+
+	_ = client.HashSet(key, fields)
+	err := client.Expire(key, duration)
 	if err != nil {
 		t.Errorf("unexpected error: %s", err.Error())
 	}

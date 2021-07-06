@@ -86,11 +86,19 @@ func populateRedis(ctx context.Context, client *client.Client, iterations int) {
 		keyName := fmt.Sprintf("command-%d", i)
 
 		command := map[string]interface{}{
-			"command":  "sleep",
 			"duration": generateRandomDelay(),
 		}
 
 		err := client.HashSet(keyName, command)
+		if err != nil {
+			log.Printf("Error when running: %s", err.Error())
+			continue
+		}
+
+		var expireInSeconds time.Duration
+		expireInSeconds = 100
+		duration := (time.Duration(expireInSeconds) * time.Second)
+		err = client.Expire(keyName, duration)
 		if err != nil {
 			log.Printf("Error when running: %s", err.Error())
 			continue
