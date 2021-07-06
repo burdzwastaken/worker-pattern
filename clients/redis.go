@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
@@ -109,4 +110,13 @@ func (c *Client) Publish(completedChan, key string, workerID int) error {
 // Subscribe subscribes to a specific channel in Redis
 func (c *Client) Subscribe(completedChan string) *redis.PubSub {
 	return c.Redis.Subscribe(c.Context, completedChan)
+}
+
+// Expires a key for a set duration
+func (c *Client) Expire(key string, expireInSeconds time.Duration) error {
+	err := c.Redis.Expire(c.Context, key, expireInSeconds).Err()
+	if err != nil {
+		return errors.Wrapf(err, "Failed to set expiry of %d for %s\n", expireInSeconds, key)
+	}
+	return nil
 }
